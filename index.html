@@ -535,18 +535,15 @@
     <script>
         const totalSeats = 50;
         
-        // --- 00시 기준 초기화 로직 추가 ---
-        const todayStr = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+        const todayStr = new Date().toISOString().slice(0, 10);
         const savedDate = localStorage.getItem('user_saved_date');
 
-        // 날짜가 바뀌었거나 최초 접속인 경우 초기화
         if (savedDate !== todayStr) {
             localStorage.setItem('user_saved_date', todayStr);
-            localStorage.setItem('user_remaining_seats', 15); // 매일 자정 초기화될 기본 잔여 좌석
+            localStorage.setItem('user_remaining_seats', 15);
             localStorage.setItem('user_last_update_time', Date.now());
-            localStorage.removeItem('deadline_hidden_date'); // '오늘 그만 보기' 설정도 자정에 해제
+            localStorage.removeItem('deadline_hidden_date');
         }
-        // ---------------------------------
 
         let currentSeats = localStorage.getItem('user_remaining_seats');
         let lastUpdateTime = localStorage.getItem('user_last_update_time');
