@@ -535,6 +535,19 @@
     <script>
         const totalSeats = 50;
         
+        // --- 00시 기준 초기화 로직 추가 ---
+        const todayStr = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+        const savedDate = localStorage.getItem('user_saved_date');
+
+        // 날짜가 바뀌었거나 최초 접속인 경우 초기화
+        if (savedDate !== todayStr) {
+            localStorage.setItem('user_saved_date', todayStr);
+            localStorage.setItem('user_remaining_seats', 15); // 매일 자정 초기화될 기본 잔여 좌석
+            localStorage.setItem('user_last_update_time', Date.now());
+            localStorage.removeItem('deadline_hidden_date'); // '오늘 그만 보기' 설정도 자정에 해제
+        }
+        // ---------------------------------
+
         let currentSeats = localStorage.getItem('user_remaining_seats');
         let lastUpdateTime = localStorage.getItem('user_last_update_time');
         const currentTime = Date.now();
@@ -578,6 +591,7 @@
 
                 telegramBtn.classList.remove('disabled');
                 telegramBtn.setAttribute('href', 'https://t.me/+myd8JIY5FZk0NGY1');
+                telegramBtn.innerHTML = `<span>텔레그램 채널 무료 입장하기</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`; // 마감되었다가 다시 풀릴 때 버튼 텍스트 복구
             } else {
                 seatCountElem.textContent = `입장 마감 (0자리)`;
                 if(toastSeatElem) {
@@ -593,7 +607,6 @@
                 noticeBanner.style.background = '#fff1f2';
                 noticeBanner.style.borderColor = '#fda4af';
 
-                const todayStr = new Date().toISOString().slice(0, 10);
                 const hiddenDate = localStorage.getItem('deadline_hidden_date');
 
                 if (hiddenDate !== todayStr) {
@@ -609,7 +622,6 @@
         });
 
         document.getElementById('modalTodayStopBtn').addEventListener('click', () => {
-            const todayStr = new Date().toISOString().slice(0, 10);
             localStorage.setItem('deadline_hidden_date', todayStr);
             document.getElementById('deadlineModal').classList.remove('show');
         });
@@ -669,7 +681,7 @@
             { author: "서** 회원님", text: "반신반의하며 입장했는데 리포트 받아보고 바로 마음 굳혔습니다. 쭉 함께 갈게요." },
             { author: "권** 회원님", text: "주식은 외로운 싸움인 줄 알았는데 든든한 등대 같은 곳을 찾은 기분입니다." },
             { author: "황** 회원님", text: "예전엔 뉴스 보며 뇌동매매하기 바빴는데, 이제는 여유롭게 대응하고 있어요." },
-            { author: "안** 회원님", text: "시황 분석이 이렇게 쏙쏙 들어오는 건 처음 봅니다. 초보자들도 이해하기 너무 좋아요." },
+            { author: "안** 회원님", text: "시황 분석이 이렇게 쏙쏙 들어오는 건 처음 봅니다. 초보자들 이해하기 너무 좋아요." },
             { author: "송** 회원님", text: "원금 회복까지 솔직히 오래 걸릴 줄 알았는데 속도가 붙어서 너무 신기합니다." },
             { author: "전** 회원님", text: "다른 채널들 다 나가고 여기에만 정착했습니다. 정보 퀄리티가 넘사벽이에요." },
             { author: "홍** 회원님", text: "오늘도 추천해주신 내용 덕분에 수익으로 장 마감합니다. 늘 고생 많으십니다!" }
