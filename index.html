@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수급지도 입장 대기방</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #ffffff;
+            --bg-card: #fdfdfd;
+            --border-color: #cbd5e1;
+            --primary: #1d4ed8;
+            --primary-hover: #1e40af;
+            --accent: #e11d48;
+            --text-main: #090d16;
+            --text-muted: #334155;
+            --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .wrapper {
+            width: 100%;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: clamp(12px, 4vw, 24px);
+        }
+
+        .live-toast-container {
+            height: 36px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .live-toast {
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            color: #1e3a8a;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: clamp(0.75rem, 2.5vw, 0.88rem);
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 3px 10px rgba(29, 78, 216, 0.12);
+            white-space: nowrap;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .live-toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #2563eb;
+            border-radius: 50%;
+            flex-shrink: 0;
+            animation: dynamic-pulse 1.6s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+
+        @keyframes dynamic-pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+
+        .notice-banner {
+            background: #fff1f2;
+            border: 1px solid #fda4af;
+            color: #881337;
+            padding: clamp(10px, 3vw, 14px) 16px;
+            border-radius: 12px;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 15px;
+            word-break: keep-all;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .page-header h1 {
+            font-size: clamp(1.4rem, 4.5vw, 1.8rem);
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+            color: #090d16;
+            word-break: keep-all;
+        }
+
+        .update-badge {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #3730a3;
+            font-size: clamp(0.75rem, 2vw, 0.85rem);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            border: 1px solid #c7d2fe;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            font-weight: 500;
+            word-break: keep-all;
+        }
+
+        .urgency-card {
+            background: var(--bg-card);
+            border: 2px solid #cbd5e1;
+            border-radius: 16px;
+            padding: clamp(16px, 4vw, 24px);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .urgency-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            font-weight: 700;
+            margin-bottom: 12px;
+            gap: 8px;
+        }
+
+        .progress-track {
+            background: #e2e8f0;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+            border: 1px solid #cbd5e1;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #1d4ed8, #3b82f6);
+            height: 100%;
+            width: 30%; 
+            border-radius: 6px;
+            transition: width 0.6s ease;
+            box-shadow: 0 1px 3px rgba(29, 78, 216, 0.3);
+        }
+
+        .content-card {
+            background: var(--bg-card);
+            border: 2px solid #cbd5e1;
+            border-radius: 16px;
+            padding: clamp(18px, 4vw, 26px);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .content-card h3 {
+            font-size: clamp(1.05rem, 3vw, 1.2rem);
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #090d16;
+            word-break: keep-all;
+        }
+
+        .report-list {
+            list-style: none;
+            font-size: clamp(0.9rem, 2.5vw, 0.98rem);
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            word-break: keep-all;
+        }
+
+        .blur-box {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #2563eb;
+            background: #fff;
+        }
+
+        .blur-content {
+            filter: blur(4px);
+            user-select: none;
+            padding: clamp(14px, 3vw, 18px) 20px;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            color: #090d16;
+            font-weight: 700;
+            line-height: 1.6;
+            word-break: keep-all;
+        }
+
+        .blur-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.75);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .blur-overlay p {
+            font-size: clamp(0.95rem, 2.8vw, 1.05rem);
+            font-weight: 800;
+            color: #1e3a8a;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            word-break: keep-all;
+        }
+
+        .blur-overlay span {
+            font-size: clamp(0.75rem, 2.2vw, 0.85rem);
+            color: #334155;
+            font-weight: 700;
+            word-break: keep-all;
+        }
+
+        .review-widget {
+            background: var(--bg-card);
+            border: 2px solid #cbd5e1;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 30px;
+            min-height: 82px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow-card);
+        }
+
+        .review-item {
+            position: absolute;
+            width: calc(100% - 32px);
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            color: var(--text-muted);
+            font-weight: 500;
+            word-break: keep-all;
+        }
+
+        .review-item.active {
+            opacity: 1;
+        }
+
+        .review-item b {
+            color: #090d16;
+            margin-right: 6px;
+            font-weight: 700;
+        }
+
+        .cta-box {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .telegram-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            font-size: clamp(1rem, 3vw, 1.15rem);
+            font-weight: 700;
+            padding: clamp(14px, 3.5vw, 18px) 0;
+            border-radius: 14px;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 18px rgba(29, 78, 216, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .telegram-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(29, 78, 216, 0.45);
+        }
+
+        .telegram-btn:active {
+            transform: scale(0.98);
+        }
+
+        .telegram-btn svg {
+            transition: transform 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        .telegram-btn:hover svg {
+            transform: translateX(4px);
+        }
+
+        .telegram-btn.disabled {
+            background: #e2e8f0 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
+            pointer-events: none;
+            box-shadow: none;
+            transform: none !important;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(9, 13, 22, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            padding: 16px;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 20px;
+            padding: clamp(24px, 5vw, 36px) clamp(20px, 4vw, 28px);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: var(--shadow-modal);
+            transform: translateY(12px) scale(0.96);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-overlay.show .modal-card {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-icon {
+            font-size: 2.8rem;
+            margin-bottom: 12px;
+            display: inline-block;
+            animation: bounce-icon 1.8s infinite ease-in-out;
+        }
+
+        @keyframes bounce-icon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .modal-card h3 {
+            font-size: clamp(1.15rem, 3.5vw, 1.35rem);
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: #e11d48;
+            word-break: keep-all;
+        }
+
+        .modal-card p {
+            font-size: clamp(0.9rem, 2.8vw, 1rem);
+            color: #334155;
+            margin-bottom: 24px;
+            line-height: 1.5;
+            font-weight: 600;
+            word-break: keep-all;
+        }
+
+        .modal-btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px 0;
+            border-radius: 12px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            word-break: keep-all;
+        }
+
+        .modal-btn.close-only {
+            background: #f1f5f9;
+            color: #334155;
+            border: 2px solid #cbd5e1;
+        }
+
+        .modal-btn.close-only:hover {
+            background: #e2e8f0;
+            color: #090d16;
+        }
+
+        .modal-btn.today-stop {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
+        }
+
+        .modal-btn.today-stop:hover {
+            background: var(--primary-hover);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        
+        <div class="live-toast-container">
+            <div class="live-toast" id="liveToast">
+                <span class="live-dot"></span>
+                <span id="toastText">김** 님 방금 텔레그램 채널 입장 완료 (잔여 <span id="toastSeatCount">15</span>자리)</span>
+            </div>
+        </div>
+
+        <div class="notice-banner" id="noticeBanner">
+            🚨 서버 트래픽 폭증으로 금일 텔레그램 채널 입장은 <b>선착순 인원</b>만 수용됩니다.
+        </div>
+
+        <div class="page-header">
+            <div class="update-badge">✨ 실시간 라이브 데이터베이스</div>
+            <h1>수급지도 입장 대기방</h1>
+            <p>매크로 변수, 기관·외인 수급 데이터 기반 시장 분석 리포트</p>
+        </div>
+
+        <div class="urgency-card">
+            <div class="urgency-header">
+                <span style="color: #090d16;">실시간 잔여 입장석</span>
+                <span id="seatCount" style="color: #e11d48; font-weight: 800;">15자리 / 총 50명</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <h3>💡 1. 오늘의 핵심 섹터 및 히든 종목 요약</h3>
+            <ul class="report-list">
+                <li>• 미 연방정부 예산안 마찰에 따른 단기 변동성 대응 전략</li>
+                <li>• HBM3E/HBM4 중심 공급망 수혜 소부장 집중 분석</li>
+            </ul>
+
+            <div class="blur-box">
+                <div class="blur-content">
+                    [보안 리포트] 금일 기관 누적 순매수 상위 종목 코드: 00****, 목표가 **원, 손절가 **원 전격 공개. (보안상 외부 노출이 제한됩니다.)
+                </div>
+                <div class="blur-overlay">
+                    <p>🔒 텔레그램 입장 후 전체 리포트를 확인하세요</p>
+                    <span>보안 정책에 따라 상세 내용이 잠금 처리되었습니다.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="review-widget" id="reviewWidget">
+            <div class="review-item active">
+                <p><b>김** 회원님</b> "무료 정보방인데 웬만한 유료 리딩방보다 분석 수준이 높네요. 감사합니다."</p>
+            </div>
+            <div class="review-item">
+                <p><b>박** 회원님</b> "선착순 겨우 들어왔습니다. 오늘 아침 브리핑 소름 돋았어요."</p>
+            </div>
+            <div class="review-item">
+                <p><b>이** 회원님</b> "혼자 매매하다 물렸었는데 여기서 흐름 잡고 원금 회복 중입니다."</p>
+            </div>
+        </div>
+
+        <div class="cta-box">
+            <a href="https://t.me/your_telegram_link" target="_blank" class="telegram-btn" id="telegramBtn">
+                <span>텔레그램 채널 무료 입장하기</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deadlineModal">
+        <div class="modal-card">
+            <div class="modal-icon">⏳</div>
+            <h3>선착순 입장이 마감되었습니다</h3>
+            <p>금일 제공되는 무료 입장 인원이 모두 마감되었습니다.<br>다음 기회를 이용해 주시기 바랍니다.</p>
+            <div class="modal-btn-group">
+                <button class="modal-btn close-only" id="modalCloseBtn">닫기</button>
+                <button class="modal-btn today-stop" id="modalTodayStopBtn">오늘 그만 보기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const totalSeats = 50;
+        
+        let currentSeats = localStorage.getItem('user_remaining_seats');
+        let lastUpdateTime = localStorage.getItem('user_last_update_time');
+        const currentTime = Date.now();
+
+        if (currentSeats === null || lastUpdateTime === null) {
+            currentSeats = 15;
+            lastUpdateTime = currentTime;
+            localStorage.setItem('user_remaining_seats', currentSeats);
+            localStorage.setItem('user_last_update_time', lastUpdateTime);
+        } else {
+            currentSeats = parseInt(currentSeats, 10);
+            lastUpdateTime = parseInt(lastUpdateTime, 10);
+
+            const elapsedSeconds = Math.floor((currentTime - lastUpdateTime) / 1000);
+            const decreaseCount = Math.floor(elapsedSeconds / 30);
+            if (decreaseCount > 0) {
+                currentSeats = Math.max(0, currentSeats - decreaseCount);
+                lastUpdateTime = lastUpdateTime + (decreaseCount * 30 * 1000);
+                localStorage.setItem('user_remaining_seats', currentSeats);
+                localStorage.setItem('user_last_update_time', lastUpdateTime);
+            }
+        }
+
+        function updateSeatUI() {
+            const seatCountElem = document.getElementById('seatCount');
+            const progressBarElem = document.getElementById('progressBar');
+            const toastSeatElem = document.getElementById('toastSeatCount');
+            const telegramBtn = document.getElementById('telegramBtn');
+            const noticeBanner = document.getElementById('noticeBanner');
+            const deadlineModal = document.getElementById('deadlineModal');
+
+            if (currentSeats > 0) {
+                seatCountElem.textContent = `${currentSeats}자리 / 총 ${totalSeats}명`;
+                
+                if(toastSeatElem) {
+                    toastSeatElem.textContent = currentSeats;
+                }
+
+                let progressPercent = (currentSeats / totalSeats) * 100;
+                progressBarElem.style.width = `${progressPercent}%`;
+
+                telegramBtn.classList.remove('disabled');
+                telegramBtn.setAttribute('href', 'https://t.me/your_telegram_link');
+            } else {
+                seatCountElem.textContent = `입장 마감 (0자리)`;
+                if(toastSeatElem) {
+                    toastSeatElem.textContent = 0;
+                }
+                progressBarElem.style.width = `0%`;
+
+                telegramBtn.classList.add('disabled');
+                telegramBtn.removeAttribute('href');
+                telegramBtn.innerHTML = `<span>선착순 입장 마감됨</span>`;
+
+                noticeBanner.innerHTML = `🚨 금일 텔레그램 채널 무료 입장이 <b>완전 마감</b>되었습니다.`;
+                noticeBanner.style.background = '#fff1f2';
+                noticeBanner.style.borderColor = '#fda4af';
+
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const hiddenDate = localStorage.getItem('deadline_hidden_date');
+
+                if (hiddenDate !== todayStr) {
+                    deadlineModal.classList.add('show');
+                }
+            }
+        }
+
+        updateSeatUI();
+
+        document.getElementById('modalCloseBtn').addEventListener('click', () => {
+            document.getElementById('deadlineModal').classList.remove('show');
+        });
+
+        document.getElementById('modalTodayStopBtn').addEventListener('click', () => {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            localStorage.setItem('deadline_hidden_date', todayStr);
+            document.getElementById('deadlineModal').classList.remove('show');
+        });
+
+        const names = [
+            "리 *", "수* 이", "김 *석", "한 *호", "W", 
+            "박 *지", "루*", "유 *가", "김 *회", "보라",
+            "정*", "CHO *", "Kim * oh", "신 *환", "Lee Ju Young",
+            "k*k", "김 *재", "Kim *.J", "지*파", "수*",
+            "오 *율", "K*Y", "재*", "김* 경", "Le*ri",
+            "노* 모", "s es*er", "김 김*수", "서 *훈",
+            "Ant *vely", "정 *승", "Shin *", "미 보*",
+            "정 *학", "이 *명", "김 김*희", "h *", "여 *언",
+            "P *ia", "M*", "Cheolho *", "* HAWSU", "한 *연"
+        ];
+        
+        const toastElem = document.getElementById('liveToast');
+        const toastTextElem = document.getElementById('toastText');
+
+        function showLiveToast() {
+            if (currentSeats <= 0) return;
+
+            currentSeats -= 1;
+            localStorage.setItem('user_remaining_seats', currentSeats);
+            localStorage.setItem('user_last_update_time', Date.now());
+            updateSeatUI();
+
+            if (currentSeats <= 0) return;
+
+            const randomName = names[Math.floor(Math.random() * names.length)];
+            toastTextElem.innerHTML = `${randomName} 님 방금 텔레그램 채널 입장 완료 (잔여 <span id="toastSeatCount">${currentSeats}</span>자리)`;
+            
+            toastElem.classList.add('show');
+
+            setTimeout(() => {
+                toastElem.classList.remove('show');
+            }, 3000);
+        }
+
+        setTimeout(showLiveToast, 1000);
+        setInterval(showLiveToast, 30000);
+
+        const reviews = document.querySelectorAll('.review-item');
+        let currentIdx = 0;
+        setInterval(() => {
+            reviews[currentIdx].classList.remove('active');
+            currentIdx = (currentIdx + 1) % reviews.length;
+            reviews[currentIdx].classList.add('active');
+        }, 4000);
+
+        document.body.addEventListener('touchmove', function(e) {
+        }, { passive: true });
+    </script>
+</body>
+</html>
