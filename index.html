@@ -49,10 +49,6 @@
         }
 
         .live-toast-container {
-            /* position: fixed;
-            top: 40px;
-            left: 50%;
-            transform: translate(-50%, 0); */
             height: 36px;
             margin-bottom: 20px;
             display: flex;
@@ -279,12 +275,22 @@
         .review-item {
             position: absolute;
             width: calc(100% - 32px);
+            min-width: 0;
             opacity: 0;
             transition: opacity 0.4s ease-in-out;
             font-size: clamp(0.85rem, 2.5vw, 0.95rem);
             color: var(--text-muted);
             font-weight: 500;
             word-break: keep-all;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .review-item p {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
         }
 
         .review-item.active {
@@ -359,7 +365,6 @@
             justify-content: center;
             z-index: 9999;
             opacity: 0;
-            /* display: none; */
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
             padding: 16px;
@@ -504,17 +509,8 @@
             </div>
         </div>
 
-        <div class="review-widget" id="reviewWidget">
-            <div class="review-item active">
-                <p><b>김** 회원님</b> "무료 정보방인데 웬만한 유료 리딩방보다 분석 수준이 높네요. 감사합니다."</p>
-            </div>
-            <div class="review-item">
-                <p><b>박** 회원님</b> "선착순 겨우 들어왔습니다. 오늘 아침 브리핑 소름 돋았어요."</p>
-            </div>
-            <div class="review-item">
-                <p><b>이** 회원님</b> "혼자 매매하다 물렸었는데 여기서 흐름 잡고 원금 회복 중입니다."</p>
-            </div>
-        </div>
+        <!-- 객체 기반 동적 리뷰 위젯 컨테이너 -->
+        <div class="review-widget" id="reviewWidget"></div>
 
         <div class="cta-box">
             <a href="텔레그램 주소" target="_blank" class="telegram-btn" id="telegramBtn">
@@ -656,8 +652,41 @@
         setTimeout(showLiveToast, 1000);
         setInterval(showLiveToast, 30000);
 
-        const reviews = document.querySelectorAll('.review-item');
+        const reviewData = [
+            { author: "김** 회원님", text: "무료 정보방인데 웬만한 유료 리딩방보다 분석 수준이 높네요. 감사합니다." },
+            { author: "박** 회원님", text: "선착순 겨우 들어왔습니다. 오늘 아침 브리핑 소름 돋았어요." },
+            { author: "이** 회원님", text: "혼자 매매하다 물렸었는데 여기서 흐름 잡고 원금 회복 중입니다." },
+            { author: "정** 회원님", text: "상폐 당할 뻔한 종목들 여기서 조언 얻어서 구조대 탔습니다ㅠㅠ 정말 은인분이십니다." },
+            { author: "최** 회원님", text: "매번 감으로 하다가 대패하고 멘탈 나갔었는데, 기준이 생기니까 마음이 편안해지네요." },
+            { author: "강** 회원님", text: "주변 지인 추천으로 들어왔는데 눈이 번쩍 뜨이네요. 정보 퀄리티가 다릅니다." },
+            { author: "조** 회원님", text: "손실 본 거 언제 복구하나 막막했는데, 요즘 하루하루 계좌 회복되는 재미로 삽니다." },
+            { author: "윤** 회원님", text: "무료 정보라 해서 기대 안 했는데 유료방보다 훨씬 낫네요. 대박입니다." },
+            { author: "장** 회원님", text: "차트만 볼 줄 알았지 매크로 분석은 꽝이었는데, 방향성을 제대로 잡아주시네요." },
+            { author: "임** 회원님", text: "알려주신 종목 매수하고 두둑하게 수익 챙겼습니다! 인증 안 할 수가 없네요." },
+            { author: "한** 회원님", text: "정보 속도가 생명이라는 걸 여기서 절실히 느낍니다. 매번 빠르고 정확해요." },
+            { author: "오** 회원님", text: "내 계좌가 살아 움직이는 걸 몇 년 만에 느껴봅니다. 눈물이 다 나네요." },
+            { author: "신** 회원님", text: "혼자 할 때는 항상 꼭지에서 물렸는데, 바닥 신호 잡아주실 때 들어가니 신세계입니다." },
+            { author: "서** 회원님", text: "반신반의하며 입장했는데 리포트 받아보고 바로 마음 굳혔습니다. 쭉 함께 갈게요." },
+            { author: "권** 회원님", text: "주식은 외로운 싸움인 줄 알았는데 든든한 등대 같은 곳을 찾은 기분입니다." },
+            { author: "황** 회원님", text: "예전엔 뉴스 보며 뇌동매매하기 바빴는데, 이제는 여유롭게 대응하고 있어요." },
+            { author: "안** 회원님", text: "시황 분석이 이렇게 쏙쏙 들어오는 건 처음 봅니다. 초보자들도 이해하기 너무 좋아요." },
+            { author: "송** 회원님", text: "원금 회복까지 솔직히 오래 걸릴 줄 알았는데 속도가 붙어서 너무 신기합니다." },
+            { author: "전** 회원님", text: "다른 채널들 다 나가고 여기에만 정착했습니다. 정보 퀄리티가 넘사벽이에요." },
+            { author: "홍** 회원님", text: "오늘도 추천해주신 내용 덕분에 수익으로 장 마감합니다. 늘 고생 많으십니다!" }
+        ];
+
+        const reviewWidget = document.getElementById('reviewWidget');
+
+        reviewData.forEach((review, index) => {
+            const item = document.createElement('div');
+            item.className = `review-item ${index === 0 ? 'active' : ''}`;
+            item.innerHTML = `<p><b>${review.author}</b> "${review.text}"</p>`;
+            reviewWidget.appendChild(item);
+        });
+
+        const reviews = reviewWidget.querySelectorAll('.review-item');
         let currentIdx = 0;
+        
         setInterval(() => {
             reviews[currentIdx].classList.remove('active');
             currentIdx = (currentIdx + 1) % reviews.length;
