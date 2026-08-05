@@ -212,7 +212,7 @@
         .blur-box {
             position: relative;
             border-radius: 12px;
-            overflow: hidden;
+            /* overflow: hidden; */
             border: 2px solid #2563eb;
             background: #fff;
         }
@@ -228,31 +228,78 @@
             word-break: keep-all;
         }
 
-        .blur-overlay {
+        .lock-container {
             position: absolute;
             inset: 0;
-            background: rgba(255, 255, 255, 0.75);
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            padding: 15px;
+            background: transparent;
+            z-index: 2;
         }
 
-        .blur-overlay p {
-            font-size: clamp(0.95rem, 2.8vw, 1.05rem);
+        .lock-icon {
+            font-size: 1.8rem;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 14px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            cursor: default;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .lock-icon:hover {
+            transform: scale(1.1);
+            background: #ffffff;
+        }
+
+        .blur-tooltip {
+            position: absolute;
+            top: -80px;
+            left: 288px;
+            background: #ffffff;
+            border: 2px solid #2563eb;
+            border-radius: 14px;
+            padding: 14px 18px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(6px);
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+            z-index: 10;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .blur-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 30px;
+            width: 12px;
+            height: 12px;
+            background: #ffffff;
+            border-right: 2px solid #2563eb;
+            border-bottom: 2px solid #2563eb;
+            transform: rotate(45deg);
+        }
+
+        .lock-container:hover .blur-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .blur-tooltip p {
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
             font-weight: 800;
             color: #1e3a8a;
             margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
             word-break: keep-all;
         }
 
-        .blur-overlay span {
-            font-size: clamp(0.75rem, 2.2vw, 0.85rem);
+        .blur-tooltip span {
+            font-size: clamp(0.75rem, 2vw, 0.82rem);
             color: #334155;
             font-weight: 700;
             word-break: keep-all;
@@ -502,9 +549,12 @@
                 <div class="blur-content">
                     [보안 리포트] 금일 기관·외국인 수급 유입 상위 종목 코드: 00****, 목표가 원, 손절가 원 전격 공개. (보안상 외부 노출이 제한됩니다.)
                 </div>
-                <div class="blur-overlay">
-                    <p>🔒 텔레그램 입장 후 전체 리포트를 확인하세요</p>
-                    <span>보안 정책에 따라 상세 내용이 잠금 처리되었습니다.</span>
+                <div class="lock-container">
+                    <div class="lock-icon">🔒</div>
+                    <div class="blur-tooltip">
+                        <p>🔒 텔레그램 입장 후 전체 리포트를 확인하세요</p>
+                        <span>보안 정책에 따라 상세 내용이 잠금 처리되었습니다.</span>
+                    </div>
                 </div>
             </div>
         </div>
